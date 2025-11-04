@@ -50,12 +50,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // Generate email from phone for demo purposes
     final email = '${_phoneController.text}@aid.com';
 
-    final result = await ApiService.register(
-      name: _nameController.text.trim(),
-      email: email,
-      password: _passwordController.text,
-      phone: _phoneController.text.trim(),
-    );
+    final result = await ApiService.register({
+      'name': _nameController.text.trim(),
+      'email': email,
+      'password': _passwordController.text,
+      'phone': _phoneController.text.trim(),
+    });
 
     setState(() => _isLoading = false);
 

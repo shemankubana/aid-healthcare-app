@@ -23,6 +23,10 @@ class Article {
     this.likes = 0,
   });
 
+  // Getters for alternative property names
+  DateTime get publishedDate => createdAt;
+  int get likesCount => likes;
+
   factory Article.fromJson(Map<String, dynamic> json) {
     return Article(
       id: json['id']?.toString() ?? '',
