@@ -8,7 +8,7 @@ import '../models/appointment.dart';
 
 class ApiService {
   // Base URL - Update this to match your backend API
-  static const String baseUrl = 'http://localhost:8000/api';
+  static const String baseUrl = 'http://localhost:3000/api';
 
   // Token management
   static Future<void> saveToken(String token) async {
