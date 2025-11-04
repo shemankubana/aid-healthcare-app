@@ -5,10 +5,11 @@ import '../models/doctor.dart';
 import '../models/article.dart';
 import '../models/user.dart';
 import '../models/appointment.dart';
+import '../config/api_config.dart';
 
 class ApiService {
   // Base URL - Update this to match your backend API
-  static const String baseUrl = 'http://localhost:8000/api';
+  static final String baseUrl = ApiConfig.baseUrl;
 
   // Token management
   static Future<void> saveToken(String token) async {
