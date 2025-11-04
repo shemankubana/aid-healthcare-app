@@ -32,11 +32,11 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
 
   Future<void> _loadDoctors() async {
     setState(() => _isLoading = true);
-    
+
     final doctors = await ApiService.getDoctors(
-      specialization: widget.specialization,
+      category: widget.category ?? widget.specialization,
     );
-    
+
     setState(() {
       _doctors = doctors;
       _isLoading = false;
