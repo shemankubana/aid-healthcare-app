@@ -1,225 +1,178 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/doctor.dart';
 import '../models/article.dart';
 import '../models/user.dart';
 import '../models/appointment.dart';
+import 'firebase_auth_service.dart';
+import 'firestore_service.dart';
 
+/// ApiService - Wrapper around Firebase services
+/// Maintains backward compatibility with existing code
 class ApiService {
-  // Base URL - Update this to match your backend API
-  static const String baseUrl = 'http://localhost:3000/api';
+  static final FirebaseAuthService _authService = FirebaseAuthService();
+  static final FirestoreService _firestoreService = FirestoreService();
 
-  // Token management
-  static Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('auth_token', token);
+  // ==================== AUTHENTICATION ====================
+
+  /// Login with email and password
+  static Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    final result = await _authService.signIn(
+      email: email,
+      password: password,
+    );
+    return result;
   }
 
-  static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
-  }
-
-  static Future<void> clearToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-  }
-
-  // Helper method to get headers with auth token
-  static Future<Map<String, String>> _getHeaders() async {
-    final token = await getToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
-
-  // Auth APIs
-  static Future<Map<String, dynamic>> login({required String email, required String password}) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['token'] != null) {
-          await saveToken(data['token']);
-        }
-        return {'success': true, 'data': data};
-      } else {
-        return {
-          'success': false,
-          'message': jsonDecode(response.body)['message'] ?? 'Login failed'
-        };
-      }
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
-    }
-  }
-
+  /// Register a new user
   static Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(userData),
+    final result = await _authService.register(
+      email: userData['email'],
+      password: userData['password'],
+      name: userData['name'],
+      phone: userData['phone'],
+    );
+
+    // If registration is successful, create user profile in Firestore
+    if (result['success'] == true && result['user'] != null) {
+      final userId = result['user'].uid;
+      final user = User(
+        id: userId,
+        name: userData['name'],
+        email: userData['email'],
+        phone: userData['phone'],
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        if (data['token'] != null) {
-          await saveToken(data['token']);
-        }
-        return {'success': true, 'data': data};
-      } else {
-        return {
-          'success': false,
-          'message': jsonDecode(response.body)['message'] ?? 'Registration failed'
-        };
-      }
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
+      await _firestoreService.createUserProfile(userId, user);
     }
+
+    return result;
   }
 
-  // User APIs
+  /// Sign out current user
+  static Future<void> clearToken() async {
+    await _authService.signOut();
+  }
+
+  /// Check if user is signed in
+  static bool isSignedIn() {
+    return _authService.isSignedIn();
+  }
+
+  /// Get current user ID
+  static String? getCurrentUserId() {
+    return _authService.getCurrentUserId();
+  }
+
+  // ==================== USER PROFILE ====================
+
+  /// Get user profile from Firestore
   static Future<User?> getUserProfile() async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/profile'),
-        headers: headers,
-      );
+    final userId = _authService.getCurrentUserId();
+    if (userId == null) return null;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return User.fromJson(data);
-      }
-      return null;
-    } catch (e) {
-      print('Error fetching user profile: $e');
-      return null;
-    }
+    final user = await _firestoreService.getUserProfile(userId);
+    return user;
   }
 
-  // Doctor APIs
+  /// Update user profile
+  static Future<bool> updateUserProfile(Map<String, dynamic> data) async {
+    final userId = _authService.getCurrentUserId();
+    if (userId == null) return false;
+
+    return await _firestoreService.updateUserProfile(userId, data);
+  }
+
+  // ==================== DOCTORS ====================
+
+  /// Get list of doctors, optionally filtered by category
   static Future<List<Doctor>> getDoctors({String? category}) async {
-    try {
-      final headers = await _getHeaders();
-      String url = '$baseUrl/doctors';
-      if (category != null && category.isNotEmpty) {
-        url += '?category=$category';
-      }
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => Doctor.fromJson(json)).toList();
-      }
-      return [];
-    } catch (e) {
-      print('Error fetching doctors: $e');
-      // Return mock data for development
-      return _getMockDoctors();
-    }
+    return await _firestoreService.getDoctors(category: category);
   }
 
+  /// Get doctor by ID
   static Future<Doctor?> getDoctorById(String doctorId) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/doctors/$doctorId'),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return Doctor.fromJson(data);
-      }
-      return null;
-    } catch (e) {
-      print('Error fetching doctor: $e');
-      return null;
-    }
+    return await _firestoreService.getDoctorById(doctorId);
   }
 
-  // Article APIs
-  static Future<List<Article>> getArticles() async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/articles'),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => Article.fromJson(json)).toList();
-      }
-      return [];
-    } catch (e) {
-      print('Error fetching articles: $e');
-      // Return mock data for development
-      return _getMockArticles();
-    }
+  /// Add a new doctor (admin operation)
+  static Future<String?> addDoctor(Doctor doctor) async {
+    return await _firestoreService.addDoctor(doctor);
   }
 
-  // Appointment APIs
+  /// Update doctor information
+  static Future<bool> updateDoctor(String doctorId, Map<String, dynamic> data) async {
+    return await _firestoreService.updateDoctor(doctorId, data);
+  }
+
+  // ==================== ARTICLES ====================
+
+  /// Get list of articles
+  static Future<List<Article>> getArticles({int? limit}) async {
+    return await _firestoreService.getArticles(limit: limit);
+  }
+
+  /// Get article by ID
+  static Future<Article?> getArticleById(String articleId) async {
+    return await _firestoreService.getArticleById(articleId);
+  }
+
+  /// Add a new article
+  static Future<String?> addArticle(Article article) async {
+    return await _firestoreService.addArticle(article);
+  }
+
+  // ==================== APPOINTMENTS ====================
+
+  /// Book a new appointment
   static Future<Map<String, dynamic>> bookAppointment(Appointment appointment) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/appointments'),
-        headers: headers,
-        body: jsonEncode(appointment.toJson()),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        return {'success': true, 'data': data};
-      } else {
-        return {
-          'success': false,
-          'message': jsonDecode(response.body)['message'] ?? 'Booking failed'
-        };
-      }
-    } catch (e) {
-      return {'success': false, 'message': 'Network error: $e'};
-    }
+    return await _firestoreService.bookAppointment(appointment);
   }
 
+  /// Get appointments for current user
   static Future<List<Appointment>> getUserAppointments() async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/appointments'),
-        headers: headers,
-      );
+    final userId = _authService.getCurrentUserId();
+    if (userId == null) return [];
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => Appointment.fromJson(json)).toList();
-      }
-      return [];
-    } catch (e) {
-      print('Error fetching appointments: $e');
-      return [];
-    }
+    return await _firestoreService.getUserAppointments(userId);
   }
 
-  // Mock data for development
-  static List<Doctor> _getMockDoctors() {
+  /// Get appointment by ID
+  static Future<Appointment?> getAppointmentById(String appointmentId) async {
+    return await _firestoreService.getAppointmentById(appointmentId);
+  }
+
+  /// Update appointment
+  static Future<bool> updateAppointment(String appointmentId, Map<String, dynamic> data) async {
+    return await _firestoreService.updateAppointment(appointmentId, data);
+  }
+
+  /// Cancel appointment
+  static Future<bool> cancelAppointment(String appointmentId) async {
+    return await _firestoreService.cancelAppointment(appointmentId);
+  }
+
+  // ==================== REAL-TIME STREAMS ====================
+
+  /// Listen to doctors list in real-time
+  static Stream<List<Doctor>> listenToDoctors({String? category}) {
+    return _firestoreService.listenToDoctors(category: category);
+  }
+
+  /// Listen to user appointments in real-time
+  static Stream<List<Appointment>> listenToUserAppointments() {
+    final userId = _authService.getCurrentUserId();
+    if (userId == null) {
+      return Stream.value([]);
+    }
+    return _firestoreService.listenToUserAppointments(userId);
+  }
+
+  // ==================== MOCK DATA (For testing without backend) ====================
+
+  /// Get mock doctors for testing
+  static List<Doctor> getMockDoctors() {
     return [
       Doctor(
         id: '1',
@@ -249,44 +202,17 @@ class ApiService {
         category: 'Pediatrics',
         consultationFee: 120.0,
       ),
-      Doctor(
-        id: '3',
-        name: 'Dr. Emily Williams',
-        specialization: 'Dermatologist',
-        hospital: 'Skin Care Clinic',
-        rating: 4.7,
-        reviewCount: 156,
-        yearsExperience: 10,
-        patientCount: 1200,
-        about: 'Expert in treating various skin conditions and cosmetic procedures.',
-        workingHours: 'Mon - Fri (10:00 AM - 4:00 PM)',
-        category: 'Dermatology',
-        consultationFee: 130.0,
-      ),
-      Doctor(
-        id: '4',
-        name: 'Dr. James Brown',
-        specialization: 'Orthopedic Surgeon',
-        hospital: 'Orthopedic Center',
-        rating: 4.8,
-        reviewCount: 189,
-        yearsExperience: 18,
-        patientCount: 1800,
-        about: 'Specialized in joint replacement and sports injury treatment.',
-        workingHours: 'Mon - Sat (09:00 AM - 5:00 PM)',
-        category: 'Orthopedics',
-        consultationFee: 180.0,
-      ),
     ];
   }
 
-  static List<Article> _getMockArticles() {
+  /// Get mock articles for testing
+  static List<Article> getMockArticles() {
     return [
       Article(
         id: '1',
         title: 'Understanding Heart Health: Prevention Tips',
         author: 'Dr. Sarah Johnson',
-        content: 'Heart health is crucial for overall wellbeing. Regular exercise, a balanced diet, and stress management are key factors in maintaining a healthy heart...',
+        content: 'Heart health is crucial for overall wellbeing...',
         category: 'Cardiology',
         createdAt: DateTime.now().subtract(const Duration(days: 2)),
         readTime: 5,
@@ -296,31 +222,11 @@ class ApiService {
         id: '2',
         title: 'Children\'s Nutrition: A Complete Guide',
         author: 'Dr. Michael Chen',
-        content: 'Proper nutrition is essential for children\'s growth and development. This guide covers everything you need to know about feeding your child...',
+        content: 'Proper nutrition is essential for children\'s growth...',
         category: 'Pediatrics',
         createdAt: DateTime.now().subtract(const Duration(days: 5)),
         readTime: 8,
         likes: 189,
-      ),
-      Article(
-        id: '3',
-        title: 'Skin Care Basics for Every Season',
-        author: 'Dr. Emily Williams',
-        content: 'Your skin needs different care throughout the year. Learn how to adapt your skincare routine to changing weather conditions...',
-        category: 'Dermatology',
-        createdAt: DateTime.now().subtract(const Duration(days: 7)),
-        readTime: 6,
-        likes: 312,
-      ),
-      Article(
-        id: '4',
-        title: 'Preventing Sports Injuries',
-        author: 'Dr. James Brown',
-        content: 'Sports injuries can be prevented with proper training and precautions. Here are essential tips for athletes of all levels...',
-        category: 'Orthopedics',
-        createdAt: DateTime.now().subtract(const Duration(days: 10)),
-        readTime: 7,
-        likes: 156,
       ),
     ];
   }
