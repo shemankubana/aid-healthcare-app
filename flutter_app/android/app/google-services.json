@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1092688689311",
+    "project_id": "health-app-epiqueai",
+    "storage_bucket": "health-app-epiqueai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092688689311:android:03d42be6d24831ac630aaa",
+        "android_client_info": {
+          "package_name": "com.example.aid_healthcare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlMa9-B56YeZHux4hli2oboYh9ZqsCesU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
