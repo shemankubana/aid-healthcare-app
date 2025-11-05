@@ -143,6 +143,13 @@ Thumbs.db
 *.keystore
 secrets.json
 
+# Firebase configuration files (contain API keys)
+firebase_options.dart
+google-services.json
+GoogleService-Info.plist
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
 # ============================================
 # 📦 BUILD ARTIFACTS
 # ============================================
