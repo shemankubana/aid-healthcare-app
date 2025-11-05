@@ -27,10 +27,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -44,37 +41,47 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    appId: '1:YOUR_APP_ID:web:YOUR_WEB_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-    storageBucket: 'YOUR_PROJECT_ID.appspot.com',
+    apiKey: 'AIzaSyCdoF-ibdgqH-fmUoYogOqey3-iz2s4-sw',
+    appId: '1:1092688689311:web:d39082ae3bd192e8630aaa',
+    messagingSenderId: '1092688689311',
+    projectId: 'health-app-epiqueai',
+    authDomain: 'health-app-epiqueai.firebaseapp.com',
+    storageBucket: 'health-app-epiqueai.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: '1:YOUR_APP_ID:android:YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_PROJECT_ID.appspot.com',
+    apiKey: 'AIzaSyBlMa9-B56YeZHux4hli2oboYh9ZqsCesU',
+    appId: '1:1092688689311:android:03d42be6d24831ac630aaa',
+    messagingSenderId: '1092688689311',
+    projectId: 'health-app-epiqueai',
+    storageBucket: 'health-app-epiqueai.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: '1:YOUR_APP_ID:ios:YOUR_IOS_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_PROJECT_ID.appspot.com',
-    iosBundleId: 'com.aid.healthcare',
+    apiKey: 'AIzaSyAFhSwcvenG4lYi95Yg_vz5mGL8rWpSvjU',
+    appId: '1:1092688689311:ios:f2f645130403244b630aaa',
+    messagingSenderId: '1092688689311',
+    projectId: 'health-app-epiqueai',
+    storageBucket: 'health-app-epiqueai.firebasestorage.app',
+    iosBundleId: 'com.example.aidHealthcare',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'YOUR_MACOS_API_KEY',
-    appId: '1:YOUR_APP_ID:ios:YOUR_MACOS_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_PROJECT_ID.appspot.com',
-    iosBundleId: 'com.aid.healthcare',
+    apiKey: 'AIzaSyAFhSwcvenG4lYi95Yg_vz5mGL8rWpSvjU',
+    appId: '1:1092688689311:ios:f2f645130403244b630aaa',
+    messagingSenderId: '1092688689311',
+    projectId: 'health-app-epiqueai',
+    storageBucket: 'health-app-epiqueai.firebasestorage.app',
+    iosBundleId: 'com.example.aidHealthcare',
   );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyCdoF-ibdgqH-fmUoYogOqey3-iz2s4-sw',
+    appId: '1:1092688689311:web:eb608a4bfeb292e6630aaa',
+    messagingSenderId: '1092688689311',
+    projectId: 'health-app-epiqueai',
+    authDomain: 'health-app-epiqueai.firebaseapp.com',
+    storageBucket: 'health-app-epiqueai.firebasestorage.app',
+  );
+
 }
