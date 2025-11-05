@@ -16,7 +16,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
@@ -26,7 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -47,14 +47,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    // Generate email from phone for demo purposes
-    final email = '${_phoneController.text}@aid.com';
-
     final result = await ApiService.register({
       'name': _nameController.text.trim(),
-      'email': email,
+      'email': _emailController.text.trim(),
       'password': _passwordController.text,
-      'phone': _phoneController.text.trim(),
     });
 
     setState(() => _isLoading = false);
@@ -205,21 +201,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       
                       const SizedBox(height: 24),
-                      
-                      // Phone Number Field
+
+                      // Email Address Field
                       CustomTextField(
-                        label: 'Your Phone Number:',
-                        hintText: '+250 XXX XXX XXX',
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
+                        label: 'Email Address:',
+                        hintText: 'example@email.com',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your phone number';
+                            return 'Please enter your email';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Please enter a valid email';
                           }
                           return null;
                         },
                       ),
-                      
+
                       const SizedBox(height: 24),
                       
                       // Create Password Field

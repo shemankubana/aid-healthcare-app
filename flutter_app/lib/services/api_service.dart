@@ -55,6 +55,11 @@ class ApiService {
     await _authService.signOut();
   }
 
+  /// Reset password - sends password reset email
+  static Future<Map<String, dynamic>> resetPassword(String email) async {
+    return await _authService.resetPassword(email);
+  }
+
   /// Check if user is signed in
   static bool isSignedIn() {
     return _authService.isSignedIn();
